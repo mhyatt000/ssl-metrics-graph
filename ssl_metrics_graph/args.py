@@ -4,10 +4,8 @@ from argparse import ArgumentParser, Namespace
 
 
 def get_graph_args() -> Namespace:
-    """
-    returns arguments for create_graph.py
-    """
-    
+    """returns arguments for create_graph.py"""
+
     authors = ["Nicholas M. Synovic", "Matthew Hyatt"]
     parser: ArgumentParser = ArgumentParser(
         prog="SSL Metrics Git Commits LOC Graphing Utility",
@@ -15,11 +13,14 @@ def get_graph_args() -> Namespace:
         description="This prgram takes in a JSON file of values extracted from a git repository with ssl-metrics-git-commits-loc and generates graph based off of that information",
         epilog=f"This utility was developed by {', '.join(authors)}",
     )
+
+    # io
     parser.add_argument(
         "-i",
-        "--input",
-        help="The input data file that will be read to create the graphs",
+        "--inputs",
+        help="The input files that will be read to create the graphs",
         type=str,
+        nargs="+",
         required=True,
     )
     parser.add_argument(
@@ -29,13 +30,8 @@ def get_graph_args() -> Namespace:
         type=str,
         required=True,
     )
-    parser.add_argument(
-        "-r",
-        "--repository-name",
-        help="Name of the repository that is being analyzed. Will be used in the graph title",
-        type=str,
-        required=True,
-    )
+
+    # columns
     parser.add_argument(
         "--loc", help="Utilize LOC data", required=False, action="store_true"
     )
@@ -45,6 +41,23 @@ def get_graph_args() -> Namespace:
     parser.add_argument(
         "--kloc", help="Utilize KLOC data", required=False, action="store_true"
     )
+    parser.add_argument(
+        "--prod", help="Utilize productivity data", required=False, action="store_true"
+    )
+    parser.add_argument(
+        "--bus-factor",
+        help="Utilize bus factor data",
+        required=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--defect-density",
+        help="Utilize defect density data",
+        required=False,
+        action="store_true",
+    )
+
+    # jobs
     parser.add_argument(
         "--data",
         help="Graph the raw data. Discrete graph of the data",
@@ -69,6 +82,8 @@ def get_graph_args() -> Namespace:
         required=False,
         action="store_true",
     )
+
+    # window
     parser.add_argument(
         "--x-min",
         help="The smallest x value that will be plotted",
@@ -84,20 +99,29 @@ def get_graph_args() -> Namespace:
         default=-1,
     )
     parser.add_argument(
-        "-m",
-        "--maximum-polynomial-degree",
-        help="Estimated maximum degree of the best fit polynomial",
-        type=int,
-        required=False,
-        default=15,
-    )
-    parser.add_argument(
         "-s",
         "--stepper",
         help="Step through every nth data point",
         type=int,
         required=False,
         default=1,
+    )
+
+    # other
+    parser.add_argument(
+        "-r",
+        "--repo",
+        help="Name of the repository that is being analyzed. Will be used in the graph title",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "-m",
+        "--maximum-polynomial-degree",
+        help="Estimated maximum degree of the best fit polynomial",
+        type=int,
+        required=False,
+        default=15,
     )
     return parser.parse_args()
 
@@ -108,23 +132,23 @@ def check_args(args):
     else quit
     """
 
-    if args.input[-5::] != ".json":
+    if not all([input[-5::] == ".json" for input in args.inputs]):
         print("Invalid input file type. Input file must be JSON")
         quit(1)
 
     if args.x_min < 0:
         print("Invalid x window min. X window min >= 0")
-        quit(2)
+        args.x_min = 0
 
     if args.maximum_polynomial_degree < 1:
         print(
             "The maximum degree polynomial is too small. Maximum degree polynomial >= 1"
         )
-        quit(3)
+        args.maximum_polynomial_degree = 1
 
     if args.stepper < 1:
         print("The stepper is too small. Stepper >= 1")
-        quit(4)
+        args.stepper = 1
 
     if not any([args.loc, args.dloc, args.kloc]):
         print("No data option choosen. Defaulting to --loc")
@@ -133,3 +157,28 @@ def check_args(args):
     if not any([args.data, args.best_fit, args.velocity, args.acceleration]):
         print("No graph option choosen. Defaulting to --data")
         args.data = True
+
+
+def get_columns(args):
+    """returns a list of columns args that are true"""
+
+    """TODO: standardize names ... loc,kloc,dloc"""
+
+    column_names = [
+        "loc_sum",
+        "kloc",
+        "delta_loc",
+        "productivity",
+        "bus_factor",
+        "defect_density",
+    ]
+    column_args = [
+        args.loc,
+        args.kloc,
+        args.dloc,
+        args.prod,
+        args.bus_factor,
+        args.defect_density,
+    ]
+
+    return [n for n, a in zip(column_names, column_args) if a]
