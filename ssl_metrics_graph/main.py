@@ -11,15 +11,6 @@ from graph_util import SSLGraph, appendID, window
 
 
 def main() -> None:
-    """TODO:
-    -i input files.split(',')
-
-    datasets = []
-    for item in args.input:
-        col = input('what column')
-        datasets.append(pd.read_json(item)[col])
-
-    """
 
     # get args, check, proceed
     args: Namespace = get_graph_args()
@@ -27,13 +18,6 @@ def main() -> None:
 
     inputs = args.inputs
     column_args = get_columns(args)
-
-    """TODO
-    load an input
-    find all columns which can be graphed from it
-    cross the columns off the list
-    if no more cols then quit
-    """
 
     for input in inputs:
 
